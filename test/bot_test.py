@@ -1,5 +1,6 @@
 import pytest
 from core.bot_brain import BotBrain
+from unittest.mock import patch
 
 # Datos de prueba
 test_data = [
@@ -10,8 +11,9 @@ test_data = [
 
 @pytest.fixture
 def bot_brain():
-    """Fixture para inicializar la instancia de BotBrain"""
-    return BotBrain()
+    """Fixture para inicializar la instancia de BotBrain usando una base de datos en memoria"""
+    with patch('core.bot_brain.Config.DB_FILE', ':memory:'):
+        return BotBrain()
 
 @pytest.mark.asyncio
 async def test_bot_brain_response(bot_brain):
