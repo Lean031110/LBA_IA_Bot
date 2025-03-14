@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Base de Conocimiento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Base de Conocimiento</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatternModal">
+            <i class="fas fa-plus"></i> Nuevo Patrón
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Patrón</th>
+                            <th>Respuesta</th>
+                            <th>Confianza</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pattern in patterns %}
+                        <tr>
+                            <td>{{ pattern[0] }}</td>
+                            <td>{{ pattern[1] }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: {{ pattern[2] * 100 }}%"
+                                         aria-valuenow="{{ pattern[2] * 100 }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        {{ "%.0f"|format(pattern[2] * 100) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-pattern"
+                                        data-pattern="{{ pattern[0] }}"
+                                        data-response="{{ pattern[1] }}"
+                                        data-confidence="{{ pattern[2] }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-pattern"
+                                        data-pattern="{{ pattern[0] }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para añadir patrón -->
+<div class="modal fade" id="addPatternModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Añadir Nuevo Patrón</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPatternForm">
+                    <div class="mb-3">
+                        <label for="pattern" class="form-label">Patrón</label>
+                        <input type="text" class="form-control" id="pattern" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="response" class="form-label">Respuesta</label>
+                        <textarea class="form-control" id="response" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confidence" class="form-label">Confianza</label>
+                        <input type="range" class="form-range" id="confidence"
+                               min="0" max="1" step="0.1" value="0.8">
+                        <div class="text-center" id="confidenceValue">0.8</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="savePattern">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar patrón -->
+<div class="modal fade" id="editPatternModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Patrón</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editPatternForm">
+                    <input type="hidden" id="editOriginalPattern">
+                    <div class="mb-3">
+                        <label for="editPattern" class="form-label">Patrón</label>
+                        <input type="text" class="form-control" id="editPattern" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editResponse" class="form-label">Respuesta</label>
+                        <textarea class="form-control" id="editResponse" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editConfidence" class="form-label">Confianza</label>
+                        <input type="range" class="form-range" id="editConfidence"
+                               min="0" max="1" step="0.1" value="0.8">
+                        <div class="text-center" id="editConfidenceValue">0.8</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="updatePattern">Actualizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar valor de confianza en tiempo real
+    document.getElementById('confidence').addEventListener('input', function(e) {
+        document.getElementById('confidenceValue').textContent = e.target.value;
+    });
+
+    document.getElementById('editConfidence').addEventListener('input', function(e) {
+        document.getElementById('editConfidenceValue').textContent = e.target.value;
+    });
+
+    // Guardar nuevo patrón
+    document.getElementById('savePattern').addEventListener('click', function() {
+        const pattern = document.getElementById('pattern').value;
+        const response = document.getElementById('response').value;
+        const confidence = document.getElementById('confidence').value;
+
+        fetch('/api/add_pattern', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `pattern=${encodeURIComponent(pattern)}&response=${encodeURIComponent(response)}&confidence=${confidence}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al guardar el patrón: ' + data.error);
+            }
+        });
+    });
+
+    // Configurar botones de edición
+    document.querySelectorAll('.edit-pattern').forEach(button => {
+        button.addEventListener('click', function() {
+            const pattern = this.dataset.pattern;
+            const response = this.dataset.response;
+            const confidence = this.dataset.confidence;
+
+            document.getElementById('editOriginalPattern').value = pattern;
+            document.getElementById('editPattern').value = pattern;
+            document.getElementById('editResponse').value = response;
+            document.getElementById('editConfidence').value = confidence;
+            document.getElementById('editConfidenceValue').textContent = confidence;
+
+            new bootstrap.Modal(document.getElementById('editPatternModal')).show();
+        });
+    });
+
+    // Actualizar patrón
+    document.getElementById('updatePattern').addEventListener('click', function() {
+        const originalPattern = document.getElementById('editOriginalPattern').value;
+        const pattern = document.getElementById('editPattern').value;
+        const response = document.getElementById('editResponse').value;
+        const confidence = document.getElementById('editConfidence').value;
+
+        fetch('/api/update_pattern', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `original_pattern=${encodeURIComponent(originalPattern)}&pattern=${encodeURIComponent(pattern)}&response=${encodeURIComponent(response)}&confidence=${confidence}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al actualizar el patrón: ' + data.error);
+            }
+        });
+    });
+
+    // Eliminar patrón
+    document.querySelectorAll('.delete-pattern').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que quieres eliminar este patrón?')) {
+                const pattern = this.dataset.pattern;
+
+                fetch('/api/delete_pattern', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `pattern=${encodeURIComponent(pattern)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar el patrón: ' + data.error);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Estadísticas del Bot</h2>
+
+    <div class="row">
+        <!-- Estadísticas Generales -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Resumen General</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Total Usuarios:</strong>
+                            <span id="totalUsers">{{ total_users }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Mensajes Procesados:</strong>
+                            <span id="totalMessages">{{ total_messages }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Patrones Aprendidos:</strong>
+                            <span id="totalPatterns">{{ total_patterns }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Tasa de Respuesta:</strong>
+                            <span id="responseRate">{{ response_rate }}</span>%
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Actividad -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Actividad Diaria</h5>
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Tipos de Interacción -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tipos de Interacción</h5>
+                    <canvas id="interactionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendimiento de IA -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Rendimiento de IA</h5>
+                    <canvas id="aiPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Últimas Interacciones -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Últimas Interacciones</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Mensaje</th>
+                            <th>Tipo</th>
+                            <th>Confianza</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interaction in recent_interactions %}
+                        <tr>
+                            <td>{{ interaction.user_id }}</td>
+                            <td>{{ interaction.message }}</td>
+                            <td>{{ interaction.type }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: {{ interaction.confidence * 100 }}%">
+                                        {{ "%.0f"|format(interaction.confidence * 100) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ interaction.timestamp }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Grupos -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Actividad por Grupos</h5>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Grupo</th>
+                                <th>Mensajes</th>
+                                <th>Usuarios Activos</th>
+                                <th>Última Actividad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in group_stats %}
+                            <tr>
+                                <td>{{ group.name }}</td>
+                                <td>{{ group.messages }}</td>
+                                <td>{{ group.active_users }}</td>
+                                <td>{{ group.last_activity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Acciones de Moderación</h5>
+                    <canvas id="moderationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Actividad Diaria
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: {{ activity_labels|tojson }},
+            datasets: [{
+                label: 'Mensajes por Día',
+                data: {{ activity_data|tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de Tipos de Interacción
+    const interactionCtx = document.getElementById('interactionChart').getContext('2d');
+    new Chart(interactionCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Comandos', 'Preguntas', 'Conversación', 'Otros'],
+            datasets: [{
+                data: {{ interaction_types|tojson }},
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Gráfico de Rendimiento de IA
+    const aiCtx = document.getElementById('aiPerformanceChart').getContext('2d');
+    new Chart(aiCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Alta', 'Media', 'Baja'],
+            datasets: [{
+                label: 'Confianza de Respuestas',
+                data: {{ ai_performance|tojson }},
+                backgroundColor: [
+                    'rgb(75, 192, 192)',
+                    'rgb(255, 205, 86)',
+                    'rgb(255, 99, 132)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de Moderación
+    const moderationCtx = document.getElementById('moderationChart').getContext('2d');
+    new Chart(moderationCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Advertencias', 'Silencios', 'Expulsiones', 'Mensajes Eliminados'],
+            datasets: [{
+                data: {{ moderation_stats|tojson }},
+                backgroundColor: [
+                    'rgb(255, 205, 86)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 99, 132)',
+                    'rgb(201, 203, 207)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Actualización automática
+    setInterval(() => {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateStats(data.stats);
+                }
+            });
+    }, 60000); // Actualizar cada minuto
+});
+
+function updateStats(stats) {
+    // Actualizar contadores
+    document.getElementById('totalUsers').textContent = stats.total_users;
+    document.getElementById('totalMessages').textContent = stats.total_messages;
+    document.getElementById('totalPatterns').textContent = stats.total_patterns;
+    document.getElementById('responseRate').textContent = stats.response_rate;
+
+    // Actualizar gráficos
+    updateChart('activityChart', stats.activity_labels, stats.activity_data);
+    updateChart('interactionChart', null, stats.interaction_types);
+    updateChart('aiPerformanceChart', null, stats.ai_performance);
+    updateChart('moderationChart', null, stats.moderation_stats);
+}
+
+function updateChart(chartId, labels, data) {
+    const chart = Chart.getChart(chartId);
+    if (chart) {
+        if (labels) {
+            chart.data.labels = labels;
+        }
+        chart.data.datasets[0].data = data;
+        chart.update();
+    }
+}
+</script>
+{% endblock %}
