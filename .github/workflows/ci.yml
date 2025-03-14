@@ -24,6 +24,7 @@ jobs:
         pip install pytest-asyncio
         pip install aiohttp
         pip install flask
+        pip install flask_login
 
     - name: Configure pytest
       run: |
