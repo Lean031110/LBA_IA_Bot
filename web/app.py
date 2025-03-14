@@ -3,7 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 import sqlite3
 from functools import wraps
 from datetime import datetime
-from config.config import Config
+from config.config import Config_Web
 import hashlib
 import os
 
