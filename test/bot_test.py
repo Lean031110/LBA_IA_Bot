@@ -71,10 +71,11 @@ async def test_ia_responses(bot_brain):
         assert response == expected_response, f"Para '{question}', se esperaba '{expected_response}' pero se obtuvo '{response}'"
 
 @pytest.fixture
-async def web_client(aiohttp_client):
+async def web_client(aiohttp_client, loop):
     """Fixture para inicializar el cliente web"""
     app = create_app()
-    return await aiohttp_client(app)
+    client = await aiohttp_client(app)
+    return client
 
 @pytest.mark.asyncio
 async def test_web_application(web_client):
