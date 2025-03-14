@@ -149,3 +149,12 @@ Para más información, contacta a {creator_username}""",
             return f"Message template '{message_key}' not found"
         except Exception as e:
             return f"Error formatting message: {str(e)}"
+
+class Config_Web:
+    """Configuración específica para la aplicación web"""
+    
+    # Configuración específica de la web
+    DEBUG = os.getenv('DEBUG', 'False') == 'True'
+    SECRET_KEY = os.getenv('SECRET_KEY', 'mysecretkey')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///data/web_data.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
