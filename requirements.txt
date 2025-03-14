@@ -13,7 +13,6 @@ mypy>=0.910
 pytz==2023.3
 asyncio==3.4.3
 flask
-pytest
-pytest-asyncio
 aiohttp
 flask_login
+pytest-aiohttp
