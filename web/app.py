@@ -8,7 +8,7 @@ import hashlib
 import os
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.urandom(24)  # Cambia esto a una variable de entorno en producción
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
