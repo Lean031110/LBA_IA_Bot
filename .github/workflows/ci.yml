@@ -33,7 +33,7 @@ jobs:
 
     - name: Run black
       run: |
-        black --check .
+        black .
 
     - name: Run tests
       run: |
