@@ -46,6 +46,9 @@ def bot_brain():
             ])
             conn.commit()
 
+        # Parchea el método `load_knowledge_base` para usar la base de datos en memoria
+        bot_brain.load_knowledge_base = lambda: None
+
         return bot_brain
 
 @pytest.fixture
