@@ -12,7 +12,7 @@ from handlers.search_handler import SearchHandler
 from core.bot_brain import BotBrain
 from core.database import Database
 
-# Configurar logging con UTC
+# Configurar logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO,
@@ -24,113 +24,122 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-async def shutdown(application: Application):
-    """Cierra la aplicación de manera segura"""
-    try:
-        await application.stop()
-        await application.shutdown()
-    except Exception as e:
-        logger.error(f"Error durante el cierre: {e}")
+class Bot:
+    def __init__(self):
+        self.application = None
+        self.database = None
+        self.bot_brain = None
 
-async def main():
-    """Función principal del bot"""
-    application = None
-    try:
-        # Inicializar componentes principales
-        database = Database()
-        bot_brain = BotBrain()
-
+    async def initialize(self):
+        """Inicializa todos los componentes del bot"""
         # Crear directorios necesarios
         Path("logs").mkdir(exist_ok=True)
         Path("data").mkdir(exist_ok=True)
         Path("data/backups").mkdir(exist_ok=True)
 
+        # Inicializar componentes principales
+        self.database = Database()
+        self.bot_brain = BotBrain()
+
         # Inicializar handlers
-        basic_handler = BasicHandler(bot_brain)
-        admin_handler = AdminHandler(bot_brain)
-        group_handler = GroupHandler(bot_brain)
+        basic_handler = BasicHandler(self.bot_brain)
+        admin_handler = AdminHandler(self.bot_brain)
+        group_handler = GroupHandler(self.bot_brain)
         search_handler = SearchHandler()
 
-        # Inicializar la aplicación sin configuración de zona horaria
-        application = (
+        # Construir la aplicación
+        self.application = (
             Application.builder()
             .token(Config.BOT_TOKEN)
-            .concurrent_updates(True)  # Permitir actualizaciones concurrentes
-            .connection_pool_size(8)   # Aumentar el tamaño del pool de conexiones
             .build()
         )
 
-        # Registrar handlers básicos
-        application.add_handler(CommandHandler("start", basic_handler.start))
-        application.add_handler(CommandHandler("help", basic_handler.help))
-        application.add_handler(CommandHandler("info", basic_handler.info))
+        # Registrar handlers
+        self.register_handlers(
+            basic_handler,
+            admin_handler,
+            group_handler,
+            search_handler
+        )
 
-        # Registrar handlers de búsqueda
-        application.add_handler(CommandHandler("search", search_handler.search))
-        application.add_handler(CommandHandler("wiki", search_handler.wiki))
+    def register_handlers(self, basic_handler, admin_handler, group_handler, search_handler):
+        """Registra todos los handlers de la aplicación"""
+        # Handlers básicos
+        self.application.add_handler(CommandHandler("start", basic_handler.start))
+        self.application.add_handler(CommandHandler("help", basic_handler.help))
+        self.application.add_handler(CommandHandler("info", basic_handler.info))
 
-        # Registrar handlers de administración
-        application.add_handler(CommandHandler("config", admin_handler.config))
-        application.add_handler(CommandHandler("stats", admin_handler.stats))
-        application.add_handler(CommandHandler("train", admin_handler.train))
-        application.add_handler(CommandHandler("backup", admin_handler.backup))
-        application.add_handler(CommandHandler("broadcast", admin_handler.broadcast))
+        # Handlers de búsqueda
+        self.application.add_handler(CommandHandler("search", search_handler.search))
+        self.application.add_handler(CommandHandler("wiki", search_handler.wiki))
 
-        # Registrar handlers de grupo
-        application.add_handler(CommandHandler("welcome", group_handler.set_welcome))
-        application.add_handler(CommandHandler("rules", group_handler.set_rules))
-        application.add_handler(CommandHandler("warn", group_handler.warn))
-        application.add_handler(CommandHandler("unwarn", group_handler.unwarn))
-        application.add_handler(CommandHandler("ban", group_handler.ban))
-        application.add_handler(CommandHandler("unban", group_handler.unban))
+        # Handlers de administración
+        self.application.add_handler(CommandHandler("config", admin_handler.config))
+        self.application.add_handler(CommandHandler("stats", admin_handler.stats))
+        self.application.add_handler(CommandHandler("train", admin_handler.train))
+        self.application.add_handler(CommandHandler("backup", admin_handler.backup))
+        self.application.add_handler(CommandHandler("broadcast", admin_handler.broadcast))
 
-        # Registrar handler para callbacks de botones
-        application.add_handler(CallbackQueryHandler(basic_handler.handle_callback))
+        # Handlers de grupo
+        self.application.add_handler(CommandHandler("welcome", group_handler.set_welcome))
+        self.application.add_handler(CommandHandler("rules", group_handler.set_rules))
+        self.application.add_handler(CommandHandler("warn", group_handler.warn))
+        self.application.add_handler(CommandHandler("unwarn", group_handler.unwarn))
+        self.application.add_handler(CommandHandler("ban", group_handler.ban))
+        self.application.add_handler(CommandHandler("unban", group_handler.unban))
 
-        # Registrar handler para mensajes normales
-        application.add_handler(MessageHandler(
+        # Handler para callbacks
+        self.application.add_handler(CallbackQueryHandler(basic_handler.handle_callback))
+
+        # Handler para mensajes normales
+        self.application.add_handler(MessageHandler(
             filters.TEXT & ~filters.COMMAND,
             basic_handler.handle_message
         ))
 
-        # Registrar handler para nuevos miembros
-        application.add_handler(MessageHandler(
+        # Handler para nuevos miembros
+        self.application.add_handler(MessageHandler(
             filters.StatusUpdate.NEW_CHAT_MEMBERS,
             group_handler.welcome_new_member
         ))
 
-        # Iniciar el bot
-        logger.info("Bot iniciado correctamente")
-        await application.initialize()
-        await application.start()
+    async def start(self):
+        """Inicia el bot"""
+        try:
+            await self.initialize()
+            logger.info("Bot iniciado correctamente")
+            await self.application.initialize()
+            await self.application.start()
+            await self.application.run_polling(
+                allowed_updates=[
+                    "message",
+                    "edited_message",
+                    "callback_query",
+                    "chat_member"
+                ],
+                drop_pending_updates=True
+            )
+        except Exception as e:
+            logger.error(f"Error iniciando el bot: {e}")
+            if self.application:
+                await self.application.shutdown()
+            raise
 
-        # Ejecutar el polling sin especificar zona horaria
-        await application.run_polling(
-            allowed_updates=[
-                "message",
-                "edited_message",
-                "callback_query",
-                "chat_member"
-            ],
-            drop_pending_updates=True
-        )
-
-    except Exception as e:
-        logger.error(f"Error iniciando el bot: {e}")
-        if application:
-            await shutdown(application)
-        raise  # Esto nos permitirá ver el error completo
+async def main():
+    """Función principal"""
+    bot = Bot()
+    await bot.start()
 
 def run_bot():
-    """Ejecuta el bot con manejo apropiado del event loop"""
-    try:
-        import asyncio
+    """Ejecuta el bot"""
+    import asyncio
 
-        # Configurar el event loop
+    try:
+        # Configurar para Windows si es necesario
         if sys.platform == "win32":
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-        # Usar run directamente en lugar de manipular el loop manualmente
+        # Ejecutar el bot
         asyncio.run(main())
 
     except KeyboardInterrupt:
