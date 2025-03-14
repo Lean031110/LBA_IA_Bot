@@ -1,6 +1,6 @@
 name: CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -24,6 +24,7 @@ jobs:
     - name: Configure pytest
       run: |
         echo "[pytest]" > pytest.ini
+        echo "asyncio_mode = strict" >> pytest.ini
         echo "asyncio_default_fixture_loop_scope = function" >> pytest.ini
 
     - name: Set PYTHONPATH
