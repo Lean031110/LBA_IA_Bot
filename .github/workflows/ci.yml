@@ -21,10 +21,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install black
+        pip install pytest-asyncio
+
+    - name: Configure pytest
+      run: |
+        echo "[pytest]" > pytest.ini
+        echo "asyncio_default_fixture_loop_scope = function" >> pytest.ini
+
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
 
     - name: Run black
       run: |
-        black .
+        black --check .
 
     - name: Run tests
       run: |
