@@ -17,7 +17,7 @@ class SearchHandler:
             self.session = aiohttp.ClientSession()
         return self.session
 
-    @rate_limit(limit=3, time_window=60)
+    @rate_limit(limit=3, window=60)  # Cambiado de time_window a window
     @log_command
     async def search(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Maneja el comando /search"""
@@ -122,7 +122,7 @@ class SearchHandler:
 
             await query.answer()
 
-    @rate_limit(limit=2, time_window=60)
+    @rate_limit(limit=2, window=60)  # Cambiado de time_window a window
     @log_command
     async def wiki(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Maneja el comando /wiki"""

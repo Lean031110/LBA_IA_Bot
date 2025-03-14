@@ -2,6 +2,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 from config.config import Config
 from handlers.basic_handler import BasicHandler
@@ -11,20 +12,29 @@ from handlers.search_handler import SearchHandler
 from core.bot_brain import BotBrain
 from core.database import Database
 
-# Configurar logging
+# Configurar logging con UTC
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO,
     handlers=[
-        logging.FileHandler(f"logs/bot_{datetime.now().strftime('%Y%m%d')}.log"),
+        logging.FileHandler(f"logs/bot_{datetime.utcnow().strftime('%Y%m%d')}.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
 
 logger = logging.getLogger(__name__)
 
+async def shutdown(application: Application):
+    """Cierra la aplicación de manera segura"""
+    try:
+        await application.stop()
+        await application.shutdown()
+    except Exception as e:
+        logger.error(f"Error durante el cierre: {e}")
+
 async def main():
     """Función principal del bot"""
+    application = None
     try:
         # Inicializar componentes principales
         database = Database()
@@ -41,8 +51,14 @@ async def main():
         group_handler = GroupHandler(bot_brain)
         search_handler = SearchHandler()
 
-        # Inicializar la aplicación
-        application = Application.builder().token(Config.BOT_TOKEN).build()
+        # Inicializar la aplicación sin configuración de zona horaria
+        application = (
+            Application.builder()
+            .token(Config.BOT_TOKEN)
+            .concurrent_updates(True)  # Permitir actualizaciones concurrentes
+            .connection_pool_size(8)   # Aumentar el tamaño del pool de conexiones
+            .build()
+        )
 
         # Registrar handlers básicos
         application.add_handler(CommandHandler("start", basic_handler.start))
@@ -87,12 +103,41 @@ async def main():
         logger.info("Bot iniciado correctamente")
         await application.initialize()
         await application.start()
-        await application.run_polling()
+
+        # Ejecutar el polling sin especificar zona horaria
+        await application.run_polling(
+            allowed_updates=[
+                "message",
+                "edited_message",
+                "callback_query",
+                "chat_member"
+            ],
+            drop_pending_updates=True
+        )
 
     except Exception as e:
         logger.error(f"Error iniciando el bot: {e}")
+        if application:
+            await shutdown(application)
+        raise  # Esto nos permitirá ver el error completo
+
+def run_bot():
+    """Ejecuta el bot con manejo apropiado del event loop"""
+    try:
+        import asyncio
+
+        # Configurar el event loop
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+        # Usar run directamente en lugar de manipular el loop manualmente
+        asyncio.run(main())
+
+    except KeyboardInterrupt:
+        logger.info("Bot detenido por el usuario")
+    except Exception as e:
+        logger.error(f"Error fatal: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    run_bot()
