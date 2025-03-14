@@ -23,6 +23,7 @@ jobs:
         pip install black
         pip install pytest-asyncio
         pip install aiohttp
+        pip install flask
 
     - name: Configure pytest
       run: |
