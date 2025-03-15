@@ -60,14 +60,14 @@ def bot():
 async def test_bot_responses(bot_brain):
     """Prueba para verificar las respuestas del bot"""
     for question, expected_response in test_data_bot:
-        response = await bot_brain.get_response(question)
+        response, confidence = await bot_brain.process_message(question, user_id=1)
         assert response == expected_response, f"Para '{question}', se esperaba '{expected_response}' pero se obtuvo '{response}'"
 
 @pytest.mark.asyncio
 async def test_ia_responses(bot_brain):
     """Prueba para verificar las respuestas de la IA"""
     for question, expected_response in test_data_ia:
-        response = await bot_brain.get_response(question)
+        response, confidence = await bot_brain.process_message(question, user_id=1)
         assert response == expected_response, f"Para '{question}', se esperaba '{expected_response}' pero se obtuvo '{response}'"
 
 @pytest.fixture
