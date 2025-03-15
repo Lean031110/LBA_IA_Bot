@@ -33,6 +33,15 @@ jobs:
             confidence REAL
         );
         ''');
+        cursor.executemany('''
+        INSERT INTO knowledge (pattern, response, confidence) VALUES (?, ?, ?)
+        ''', [
+            ('Hola', '¡Hola! ¿Cómo puedo ayudarte?', 1.0),
+            ('¿Cuál es tu nombre?', 'Soy un bot con IA. ¿Cómo puedo ayudarte?', 1.0),
+            ('¿Qué puedes hacer?', 'Puedo ayudarte con varias tareas. Pregúntame algo.', 1.0),
+            ('¿Cuál es la capital de Francia?', 'La capital de Francia es París.', 1.0),
+            ('¿Quién escribió ''Don Quijote''?', 'Miguel de Cervantes escribió ''Don Quijote''.', 1.0)
+        ]);
         conn.commit();
         conn.close();
         "
