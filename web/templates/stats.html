@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Estadísticas del Bot</h2>
+
+    <!-- Tarjetas de Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title text-primary" id="totalUsers">{{ stats.total_users }}</h3>
+                    <p class="card-text">Usuarios Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title text-success" id="totalMessages">{{ stats.total_messages }}</h3>
+                    <p class="card-text">Mensajes Procesados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title text-info" id="totalPatterns">{{ stats.total_patterns }}</h3>
+                    <p class="card-text">Patrones Aprendidos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h3 class="card-title text-warning" id="responseRate">{{ stats.response_rate }}%</h3>
+                    <p class="card-text">Tasa de Respuesta</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Principal y Secundario -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Actividad por Hora</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tipos de Interacción</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="interactionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rendimiento de IA y Moderación -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Rendimiento de IA</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="aiPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Acciones de Moderación</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="moderationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Grupos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Actividad por Grupos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="groupsTable">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Mensajes</th>
+                            <th>Usuarios Activos</th>
+                            <th>Última Actividad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración de Chart.js
+    Chart.defaults.color = '#6c757d';
+    Chart.defaults.borderColor = '#2d333b';
+
+    // Gráfico de Actividad
+    const activityChart = new Chart(document.getElementById('activityChart'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Mensajes por Hora',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#2d333b'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#2d333b'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Gráfico de Tipos de Interacción
+    const interactionChart = new Chart(document.getElementById('interactionChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Comandos', 'Preguntas', 'Conversación', 'Otros'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    // Gráfico de Rendimiento de IA
+    const aiPerformanceChart = new Chart(document.getElementById('aiPerformanceChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Alta', 'Media', 'Baja'],
+            datasets: [{
+                label: 'Nivel de Confianza',
+                data: [0, 0, 0],
+                backgroundColor: [
+                    'rgb(75, 192, 192)',
+                    'rgb(255, 205, 86)',
+                    'rgb(255, 99, 132)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#2d333b'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#2d333b'
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de Moderación
+    const moderationChart = new Chart(document.getElementById('moderationChart'), {
+        type: 'polarArea',
+        data: {
+            labels: ['Advertencias', 'Silencios', 'Expulsiones', 'Mensajes Eliminados'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: [
+                    'rgba(255, 205, 86, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(201, 203, 207, 0.5)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    function updateStats() {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar contadores
+                    document.getElementById('totalUsers').textContent = data.stats.total_users;
+                    document.getElementById('totalMessages').textContent = data.stats.total_messages;
+                    document.getElementById('totalPatterns').textContent = data.stats.total_patterns;
+                    document.getElementById('responseRate').textContent = data.stats.response_rate + '%';
+
+                    // Actualizar gráfico de actividad
+                    activityChart.data.labels = data.stats.activity_data.labels;
+                    activityChart.data.datasets[0].data = data.stats.activity_data.datasets[0].data;
+                    activityChart.update();
+
+                    // Actualizar gráfico de tipos de interacción
+                    interactionChart.data.labels = data.stats.interaction_types.labels;
+                    interactionChart.data.datasets[0].data = data.stats.interaction_types.data;
+                    interactionChart.update();
+
+                    // Actualizar gráfico de rendimiento de IA
+                    aiPerformanceChart.data.labels = data.stats.ai_performance.labels;
+                    aiPerformanceChart.data.datasets[0].data = data.stats.ai_performance.data;
+                    aiPerformanceChart.update();
+
+                    // Actualizar gráfico de moderación
+                    moderationChart.data.labels = data.stats.moderation_stats.labels;
+                    moderationChart.data.datasets[0].data = data.stats.moderation_stats.data;
+                    moderationChart.update();
+
+                    // Actualizar tabla de grupos
+                    const groupsTableBody = document.querySelector('#groupsTable tbody');
+                    groupsTableBody.innerHTML = '';
+                    data.stats.group_stats.forEach(group => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${group.name}</td>
+                            <td>${group.messages}</td>
+                            <td>${group.active_users}</td>
+                            <td>${new Date(group.last_activity).toLocaleString()}</td>
+                        `;
+                        groupsTableBody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => console.error('Error actualizando estadísticas:', error));
+    }
+
+    // Actualizar cada 30 segundos
+    updateStats();
+    setInterval(updateStats, 30000);
+});
+</script>
+{% endblock %}

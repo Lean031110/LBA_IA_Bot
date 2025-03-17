@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Test Results{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                {% if success %}
+                    <i class="fas fa-check-circle"></i> All Tests Passed
+                {% else %}
+                    <i class="fas fa-exclamation-circle"></i> Test Failures Detected
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if success %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> All tests passed successfully! The system is working as expected.
+                </div>
+            {% else %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Some tests failed. Please review the output below.
+                </div>
+            {% endif %}
+
+            <h5 class="mt-4">Test Output:</h5>
+            <div class="bg-dark text-light p-3 rounded">
+                <pre><code>{{ output }}</code></pre>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <a href="{{ url_for('run_tests') }}" class="btn btn-success">
+                <i class="fas fa-sync"></i> Run Tests Again
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

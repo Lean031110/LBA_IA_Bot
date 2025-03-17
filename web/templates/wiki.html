@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Wiki del Bot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Índice</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#introduccion" class="list-group-item list-group-item-action">Introducción</a>
+                    <a href="#caracteristicas" class="list-group-item list-group-item-action">Características</a>
+                    <a href="#instalacion" class="list-group-item list-group-item-action">Instalación</a>
+                    <a href="#configuracion" class="list-group-item list-group-item-action">Configuración</a>
+                    <a href="#uso" class="list-group-item list-group-item-action">Uso</a>
+                    <a href="#comandos" class="list-group-item list-group-item-action">Comandos</a>
+                    <a href="#moderacion" class="list-group-item list-group-item-action">Moderación</a>
+                    <a href="#ia" class="list-group-item list-group-item-action">Sistema de IA</a>
+                    <a href="#desarrollo" class="list-group-item list-group-item-action">Desarrollo</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <section id="introduccion">
+                        <h2>Introducción</h2>
+                        <p>LBA IA Bot es un bot de Telegram avanzado que combina capacidades de IA con herramientas de moderación
+                            y gestión de grupos. Desarrollado en Python, ofrece una interfaz web para administración y monitoreo
+                            en tiempo real.</p>
+                    </section>
+
+                    <section id="caracteristicas">
+                        <h2>Características</h2>
+                        <ul>
+                            <li>IA adaptativa para respuestas automáticas</li>
+                            <li>Sistema de moderación automática</li>
+                            <li>Panel de administración web</li>
+                            <li>Estadísticas en tiempo real</li>
+                            <li>Sistema de respaldo automático</li>
+                            <li>Aprendizaje continuo</li>
+                        </ul>
+                    </section>
+
+                    <section id="instalacion">
+                        <h2>Instalación</h2>
+                        <h4>Requisitos</h4>
+                        <ul>
+                            <li>Python 3.8+</li>
+                            <li>PostgreSQL</li>
+                            <li>Token de Bot de Telegram</li>
+                        </ul>
+
+                        <h4>Pasos de Instalación</h4>
+                        <pre><code>git clone https://github.com/Lean031110/lba_ia_bot.git
+cd lba_ia_bot
+pip install -r requirements.txt</code></pre>
+                    </section>
+
+                    <section id="configuracion">
+                        <h2>Configuración</h2>
+                        <h4>Variables de Entorno</h4>
+                        <p>Crea un archivo .env con las siguientes variables:</p>
+                        <pre><code>BOT_TOKEN=tu_token_aqui
+CREATOR_ID=tu_id_aqui
+BOT_USERNAME=nombre_del_bot
+LEARNING_RATE=0.01
+MIN_CONFIDENCE=0.7
+MAX_CONTEXT_LENGTH=1000</code></pre>
+                    </section>
+
+                    <section id="uso">
+                        <h2>Uso</h2>
+                        <h4>Iniciar el Bot</h4>
+                        <pre><code>python main.py</code></pre>
+
+                        <h4>Iniciar Panel Web</h4>
+                        <pre><code>gunicorn --bind 0.0.0.0:5000 web.app:app</code></pre>
+                    </section>
+
+                    <section id="comandos">
+                        <h2>Comandos</h2>
+                        <h4>Comandos Básicos</h4>
+                        <ul>
+                            <li><code>/start</code> - Inicia el bot</li>
+                            <li><code>/help</code> - Muestra ayuda</li>
+                            <li><code>/info</code> - Información del bot</li>
+                            <li><code>/search</code> - Realiza búsquedas</li>
+                            <li><code>/wiki</code> - Busca en Wikipedia</li>
+                        </ul>
+
+                        <h4>Comandos de Administración</h4>
+                        <ul>
+                            <li><code>/config</code> - Configura el bot</li>
+                            <li><code>/stats</code> - Muestra estadísticas</li>
+                            <li><code>/train</code> - Entrena la IA</li>
+                            <li><code>/backup</code> - Crea respaldo</li>
+                        </ul>
+
+                        <h4>Comandos de Grupo</h4>
+                        <ul>
+                            <li><code>/welcome</code> - Configura mensaje de bienvenida</li>
+                            <li><code>/rules</code> - Establece reglas</li>
+                            <li><code>/warn</code> - Advierte a un usuario</li>
+                            <li><code>/unwarn</code> - Quita advertencia</li>
+                            <li><code>/ban</code> - Banea usuario</li>
+                            <li><code>/unban</code> - Desbanea usuario</li>
+                        </ul>
+                    </section>
+
+                    <section id="moderacion">
+                        <h2>Moderación</h2>
+                        <p>El sistema de moderación incluye:</p>
+                        <ul>
+                            <li>Detección automática de spam</li>
+                            <li>Sistema de advertencias</li>
+                            <li>Gestión de reglas por grupo</li>
+                            <li>Registro de acciones de moderación</li>
+                            <li>Filtros de contenido personalizables</li>
+                        </ul>
+                    </section>
+
+                    <section id="ia">
+                        <h2>Sistema de IA</h2>
+                        <h4>Características</h4>
+                        <ul>
+                            <li>Procesamiento de lenguaje natural</li>
+                            <li>Aprendizaje automático</li>
+                            <li>Sistema de confianza adaptativo</li>
+                            <li>Memoria de contexto</li>
+                        </ul>
+
+                        <h4>Entrenamiento</h4>
+                        <p>El bot puede ser entrenado usando el archivo de entrenamiento JSON:</p>
+                        <pre><code>python tools/train_bot.py data/training_data.json</code></pre>
+                    </section>
+
+                    <section id="desarrollo">
+                        <h2>Desarrollo</h2>
+                        <h4>Estructura del Proyecto</h4>
+                        <pre><code>
+lba_ia_bot/
+├── core/           # Núcleo del bot
+├── handlers/       # Manejadores de comandos
+├── web/           # Panel de administración
+├── utils/         # Utilidades
+├── config/        # Configuración
+├── data/          # Datos y respaldos
+└── tools/         # Herramientas
+                        </code></pre>
+
+                        <h4>Contribuir</h4>
+                        <p>Para contribuir al proyecto:</p>
+                        <ol>
+                            <li>Fork el repositorio</li>
+                            <li>Crea una rama (<code>git checkout -b feature/nueva-caracteristica</code>)</li>
+                            <li>Commit los cambios (<code>git commit -am 'Añadir característica'</code>)</li>
+                            <li>Push a la rama (<code>git push origin feature/nueva-caracteristica</code>)</li>
+                            <li>Crea un Pull Request</li>
+                        </ol>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    // Highlight current section in sidebar
+    const sections = document.querySelectorAll('section');
+    const navItems = document.querySelectorAll('.list-group-item');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 60) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href').slice(1) === current) {
+                item.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

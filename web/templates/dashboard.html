@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">¡Bienvenido al panel de administración!</h4>
+                <p>Desde aquí puedes gestionar todas las funciones del bot y consultar sus estadísticas.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Estadísticas Generales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3>{{ total_groups|default(0) }}</h3>
+                                <p>Grupos Activos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3>{{ total_warnings|default(0) }}</h3>
+                                <p>Advertencias</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3>{{ ai_stats.patterns|default(0) }}</h3>
+                                <p>Patrones Aprendidos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3>{{ ai_stats.accuracy|default(0) }}%</h3>
+                                <p>Precisión</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Actividad del Bot</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grupos Administrados -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Grupos Administrados</h5>
+                </div>
+                <div class="card-body">
+                    {% if group_stats and group_stats|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>ID</th>
+                                    <th>Advertencias</th>
+                                    <th>Acciones</th>
+                                    <th>Auto-moderación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in group_stats %}
+                                <tr>
+                                    <td>{{ group.title }}</td>
+                                    <td>{{ group.chat_id }}</td>
+                                    <td>{{ group.warnings }}</td>
+                                    <td>{{ group.actions }}</td>
+                                    <td>
+                                        {% if group.auto_mod %}
+                                        <span class="badge bg-success">Activada</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Desactivada</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        No hay grupos administrados actualmente.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Código para el gráfico de actividad
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['00:00', '06:00', '12:00', '18:00', '23:59'],
+            datasets: [{
+                label: 'Actividad',
+                data: [0, 0, 0, 0, 0],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Actualizar estadísticas en tiempo real
+    function updateStats() {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar valores
+                    document.querySelectorAll('.stat-card').forEach(card => {
+                        const statType = card.querySelector('p').textContent.toLowerCase();
+                        if (data.stats[statType]) {
+                            card.querySelector('h3').textContent = data.stats[statType];
+                        }
+                    });
+                }
+            });
+    }
+
+    // Actualizar cada 30 segundos
+    setInterval(updateStats, 30000);
+});
+</script>
+{% endblock %}

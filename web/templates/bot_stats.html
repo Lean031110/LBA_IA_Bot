@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas del Bot{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">Estadísticas del Bot de Telegram</h4>
+                <p>Monitorea el uso y funcionamiento del bot en tiempo real.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Estadísticas generales -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Estadísticas Generales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="total_users">{{ total_users|default(0) }}</h3>
+                                <p>Usuarios Totales</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="active_users">{{ active_users|default(0) }}</h3>
+                                <p>Usuarios Activos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="total_groups">{{ total_groups|default(0) }}</h3>
+                                <p>Grupos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="total_messages">{{ total_messages|default(0) }}</h3>
+                                <p>Mensajes Procesados</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Actividad del Bot (últimos 7 días)</h5>
+                            <canvas id="activityChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mensajería masiva -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Envío Masivo de Mensajes</h5>
+                </div>
+                <div class="card-body">
+                    <form id="broadcastForm" method="post" action="{{ url_for('broadcast_message') }}">
+                        <div class="mb-3">
+                            <label for="recipient_type" class="form-label">Destinatarios</label>
+                            <select class="form-select" id="recipient_type" name="recipient_type">
+                                <option value="all">Todos los usuarios</option>
+                                <option value="active">Solo usuarios activos</option>
+                                <option value="admins">Solo administradores de grupos</option>
+                                <option value="groups">Todos los grupos</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message_content" class="form-label">Mensaje</label>
+                            <textarea class="form-control" id="message_content" name="message_content" rows="6" required placeholder="Escribe el mensaje que deseas enviar..."></textarea>
+                            <div class="form-text">Puedes usar formato Markdown básico para dar formato al texto.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="add_signature" name="add_signature" checked>
+                            <label class="form-check-label" for="add_signature">Añadir firma automática (Enviado desde el panel de administración)</label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Últimos usuarios -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Usuarios Recientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_users and recent_users|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Nombre</th>
+                                    <th>Se unió</th>
+                                    <th>Actividad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>@{{ user.username|default('Sin usuario') }}</td>
+                                    <td>{{ user.first_name|default('') }} {{ user.last_name|default('') }}</td>
+                                    <td>{{ user.created_at|default('Desconocido') }}</td>
+                                    <td>{{ user.last_activity|default('Nunca') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        No hay usuarios registrados recientemente.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Últimos mensajes -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Últimos Mensajes</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_messages and recent_messages|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Mensaje</th>
+                                    <th>Respuesta</th>
+                                    <th>Confianza</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for msg in recent_messages %}
+                                <tr>
+                                    <td>@{{ msg.username|default('Usuario') }}</td>
+                                    <td>{{ msg.content|truncate(30) }}</td>
+                                    <td>{{ msg.response|truncate(30) }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar 
+                                                {% if msg.confidence >= 0.8 %}bg-success
+                                                {% elif msg.confidence >= 0.6 %}bg-info
+                                                {% elif msg.confidence >= 0.4 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ (msg.confidence * 100)|int }}%;"
+                                                aria-valuenow="{{ (msg.confidence * 100)|int }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100">
+                                                {{ (msg.confidence * 100)|int }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        No hay mensajes recientes.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de actividad
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ activity_days|default(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'])|tojson }},
+                datasets: [{
+                    label: 'Mensajes',
+                    data: {{ activity_data|default([0, 0, 0, 0, 0, 0, 0])|tojson }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Función para actualizar estadísticas en tiempo real
+        function updateStats() {
+            fetch('/api/bot-stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar contadores
+                        document.getElementById('total_users').textContent = data.stats.total_users;
+                        document.getElementById('active_users').textContent = data.stats.active_users;
+                        document.getElementById('total_groups').textContent = data.stats.total_groups;
+                        document.getElementById('total_messages').textContent = data.stats.total_messages;
+                        
+                        // Actualizar gráfico de actividad
+                        if (data.stats.activity_data) {
+                            activityChart.data.datasets[0].data = data.stats.activity_data;
+                            activityChart.update();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error actualizando estadísticas:', error));
+        }
+
+        // Actualizar datos cada 30 segundos
+        setInterval(updateStats, 30000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas de IA{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">Inteligencia Artificial del Bot</h4>
+                <p>Monitorea y configura el sistema de IA en tiempo real.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Estadísticas de IA -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Estadísticas del Sistema de IA</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="total_patterns">{{ ai_stats.patterns|default(0) }}</h3>
+                                <p>Patrones Aprendidos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="total_interactions">{{ ai_stats.interactions|default(0) }}</h3>
+                                <p>Interacciones</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="accuracy">{{ ai_stats.accuracy|default(0) }}%</h3>
+                                <p>Precisión</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card p-3 border rounded text-center">
+                                <h3 id="avg_confidence">{{ ai_stats.avg_confidence|default(0) }}%</h3>
+                                <p>Confianza Media</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Distribución de Confianza</h5>
+                            <canvas id="confidenceChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Configuración de IA -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Configuración de IA</h5>
+                </div>
+                <div class="card-body">
+                    <form id="aiConfigForm" method="post" action="{{ url_for('save_ai_config') }}">
+                        <div class="mb-3">
+                            <label for="min_confidence" class="form-label">Confianza Mínima</label>
+                            <div class="input-group">
+                                <input type="range" class="form-range" id="min_confidence" name="min_confidence" 
+                                    min="0" max="1" step="0.05" value="{{ ai_config.min_confidence|default(0.7) }}"
+                                    oninput="document.getElementById('min_confidence_value').textContent = (this.value * 100).toFixed(0) + '%'">
+                                <span class="ms-2" id="min_confidence_value">{{ (ai_config.min_confidence|default(0.7) * 100)|int }}%</span>
+                            </div>
+                            <div class="form-text">Las respuestas con confianza por debajo de este valor no se enviarán.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="learning_rate" class="form-label">Tasa de Aprendizaje</label>
+                            <div class="input-group">
+                                <input type="range" class="form-range" id="learning_rate" name="learning_rate" 
+                                    min="0" max="1" step="0.01" value="{{ ai_config.learning_rate|default(0.01) }}"
+                                    oninput="document.getElementById('learning_rate_value').textContent = this.value">
+                                <span class="ms-2" id="learning_rate_value">{{ ai_config.learning_rate|default(0.01) }}</span>
+                            </div>
+                            <div class="form-text">Velocidad con la que el sistema aprende de nuevas interacciones.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="max_context_length" class="form-label">Longitud Máxima de Contexto</label>
+                            <input type="number" class="form-control" id="max_context_length" name="max_context_length" 
+                                min="100" max="5000" step="100" value="{{ ai_config.max_context_length|default(1000) }}">
+                            <div class="form-text">Número máximo de caracteres a considerar como contexto en una conversación.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="auto_learn" name="auto_learn" 
+                                {% if ai_config.auto_learn|default(true) %}checked{% endif %}>
+                            <label class="form-check-label" for="auto_learn">Aprendizaje automático</label>
+                            <div class="form-text">Permitir que el sistema aprenda automáticamente de las interacciones.</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Acciones de IA -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form id="trainForm" method="post" action="{{ url_for('train_ai') }}">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success mb-3">
+                                        <i class="fas fa-brain me-2"></i> Entrenar IA
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form id="backupForm" method="post" action="{{ url_for('backup_ai_knowledge') }}">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-info mb-3">
+                                        <i class="fas fa-save me-2"></i> Crear Respaldo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-warning d-block w-100" data-bs-toggle="modal" data-bs-target="#resetAIModal">
+                                <i class="fas fa-redo me-2"></i> Reiniciar IA
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Temporalmente desactivado hasta implementar la funcionalidad completa -->
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="knowledge_file" name="knowledge_file" disabled>
+                                <button type="button" class="btn btn-secondary" disabled>Importar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Patrones más usados -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Patrones Más Utilizados</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_patterns and top_patterns|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Patrón</th>
+                                    <th>Respuesta</th>
+                                    <th>Confianza</th>
+                                    <th>Usos</th>
+                                    <th>Última vez</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pattern in top_patterns %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ pattern.pattern|truncate(50) }}</td>
+                                    <td>{{ pattern.response|truncate(50) }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar 
+                                                {% if pattern.confidence >= 0.8 %}bg-success
+                                                {% elif pattern.confidence >= 0.6 %}bg-info
+                                                {% elif pattern.confidence >= 0.4 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ (pattern.confidence * 100)|int }}%;"
+                                                aria-valuenow="{{ (pattern.confidence * 100)|int }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100">
+                                                {{ (pattern.confidence * 100)|int }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ pattern.uses }}</td>
+                                    <td>{{ pattern.last_used|default('Nunca') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        No hay patrones registrados.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Reiniciar IA -->
+<div class="modal fade" id="resetAIModal" tabindex="-1" aria-labelledby="resetAIModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetAIModalLabel">Confirmar Reinicio de IA</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas reiniciar el sistema de IA?</p>
+                <p class="text-danger">¡Esto eliminará todo el conocimiento aprendido! Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{{ url_for('reset_ai') }}">
+                    <button type="submit" class="btn btn-danger">Reiniciar IA</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de distribución de confianza
+        const confidenceCtx = document.getElementById('confidenceChart').getContext('2d');
+        const confidenceChart = new Chart(confidenceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+                datasets: [{
+                    label: 'Distribución de Confianza',
+                    data: {{ confidence_distribution|default([0, 0, 0, 0, 0])|tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(255, 159, 64, 0.5)',
+                        'rgba(255, 205, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(54, 162, 235, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 159, 64)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)',
+                        'rgb(54, 162, 235)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Función para actualizar estadísticas en tiempo real
+        function updateAIStats() {
+            fetch('/api/ai-stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar contadores
+                        document.getElementById('total_patterns').textContent = data.stats.patterns;
+                        document.getElementById('total_interactions').textContent = data.stats.interactions;
+                        document.getElementById('accuracy').textContent = data.stats.accuracy + '%';
+                        document.getElementById('avg_confidence').textContent = data.stats.avg_confidence + '%';
+                        
+                        // Actualizar gráfico de confianza
+                        if (data.stats.confidence_distribution) {
+                            confidenceChart.data.datasets[0].data = data.stats.confidence_distribution;
+                            confidenceChart.update();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error actualizando estadísticas de IA:', error));
+        }
+
+        // Actualizar datos cada 30 segundos
+        setInterval(updateAIStats, 30000);
+    });
+</script>
+{% endblock %}
